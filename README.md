@@ -64,19 +64,21 @@ areas:
 | `infrastructure` | containers, research cloud (Jetstream2), self-hosted services |
 | `lang-<language>` | language-specific practice: `lang-python`, `lang-typescript`, `lang-go`, `lang-swift` |
 
-## Versions
+## Versions and releases
 
 Each skill has its own version in `metadata.version`. A release is tagged
 `<skill-name>/v<version>`, for example `compiling-lualatex-with-podman/v2.1`.
 
-## Validate
-
-All checks run in a container. The same commands run in CI on every push.
+Everything runs on your own machine; there is no CI. On the host, the scripts run
+only `git` and `podman`, and the checks run in a pinned container (`dev/Containerfile`).
 
 ```sh
-podman build -t skill-tools -f ci/Containerfile ci
-podman run --rm -v "$PWD:/work:Z" -w /work skill-tools sh ci/check.sh
+sh dev/validate.sh                                    # check every skill
+sh dev/release.sh compiling-lualatex-with-podman      # validate, tag, and push
 ```
+
+`release.sh` refuses to run with uncommitted changes or when the tag already exists, so
+bump `metadata.version` first. Add `--no-push` to tag without pushing.
 
 ## License
 

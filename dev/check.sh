@@ -1,6 +1,6 @@
 #!/bin/sh
-# Validate every skill in this repository. Runs INSIDE the ci image, with the
-# repository mounted at /work (see ci/Containerfile for the two commands).
+# Validate every skill in this repository. Runs INSIDE the dev/Containerfile
+# image, with the repository mounted at /work; dev/validate.sh starts it.
 # Checks: the Agent Skills spec (skills-ref), unique skill names, a license and
 # notice in each skill, valid eval JSON, and shellcheck on every shell script.
 set -eu
@@ -33,7 +33,7 @@ done
 # Shell scripts, at warning severity and up: every *.sh file, plus extensionless
 # files with an sh shebang (such as tools/latexctl).
 info "== shellcheck"
-scripts=$(find skills ci -type f | while IFS= read -r f; do
+scripts=$(find skills dev -type f | while IFS= read -r f; do
   case "${f##*/}" in
     *.sh) echo "$f" ;;
     *.*) ;;

@@ -1,8 +1,7 @@
 # Validation tooling for this repository. This is not any skill's build image.
 # Provides the Agent Skills reference validator (skills-ref) and shellcheck,
-# pinned so local runs and CI agree. ci/check.sh runs inside it:
-#   podman build -t skill-tools -f ci/Containerfile ci
-#   podman run --rm -v "$PWD:/work:Z" -w /work skill-tools sh ci/check.sh
+# pinned so every run on every machine agrees. dev/validate.sh builds it and
+# runs dev/check.sh inside it.
 FROM docker.io/library/python:3.12-slim@sha256:dddfd7e07f9d15aeeca61529320492139d21cac7f0070c00609243e51e4e0016
 
 RUN apt-get update \
