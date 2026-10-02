@@ -1,0 +1,56 @@
+[
+  {
+    "skills": ["compiling-lualatex-with-podman"],
+    "query": "Make me a PDF report on our Q3 results in Liberation Sans 12pt, 1.5 spacing, US letter, normal margins, with one SVG chart.",
+    "files": [],
+    "expected_behavior": [
+      "Asks for any missing setting (project directory, title, author, bibliography) in one batch before scaffolding",
+      "Notes that Liberation Sans is TrueType (not in TeX Live; Debian fonts-liberation2), which rules out a PDF/UA claim, and offers TeX Gyre Heros and Source Code Pro as OpenType equivalents",
+      "Runs `latex.sh scaffold` with --size 12 --spacing onehalf --paper letter --margin 1in instead of hand-writing a Containerfile or preamble, and runs no TeX or PDF tools on the host",
+      "Places the chart in src/figures/ as SVG with alt text, builds with `latex.sh build`, and reports a clean log check and the PDF path"
+    ]
+  },
+  {
+    "skills": ["compiling-lualatex-with-podman"],
+    "query": "Typeset notes.tex as an A4 PDF in Calibri. Don't ask me anything, just do it.",
+    "files": ["notes.tex"],
+    "expected_behavior": [
+      "Does not stop to ask questions",
+      "Scaffolds, copies notes.tex into src/, and sets MAIN_TEX in latex-build.env",
+      "Substitutes Carlito (in TeX Live, TrueType) for non-redistributable Calibri and says so, noting that a TrueType font rules out a PDF/UA claim",
+      "Uses defaults for unstated settings and lists each default applied in the final report"
+    ]
+  },
+  {
+    "skills": ["compiling-lualatex-with-podman"],
+    "query": "The build says font(s) not found in image: Liberation Sans. Fix it.",
+    "files": ["Containerfile", "latex-build.env", "src/manuscript.tex"],
+    "expected_behavior": [
+      "Explains that Liberation is not in TeX Live and is TrueType, and offers TeX Gyre Heros as the OpenType equivalent",
+      "If the user keeps Liberation, appends fonts-liberation2 to the apt-get install line in the project's Containerfile and re-runs `latex.sh build`, which rebuilds the image",
+      "Confirms the log check is clean"
+    ]
+  },
+  {
+    "skills": ["compiling-lualatex-with-podman"],
+    "query": "Make the report accessible for screen readers, with appendices labelled 'Appendix A: ...', and include our config files as highlighted code and as downloadable attachments.",
+    "files": ["src/manuscript.tex", "config/"],
+    "expected_behavior": [
+      "Keeps or enables tagging (\\DocumentMetadata first line) and avoids titlesec and listings",
+      "Uses \\appsection for appendix headings and adds alt text to every figure",
+      "Copies assets/snippets/code-and-attachments.tex into src/, inputs it, and uses \\codefile with ../config/ paths",
+      "Runs `latex.sh check-pdf` and `latex.sh verapdf`, fixes failed rules, and adds pdfstandard=ua-2 only after zero failures"
+    ]
+  },
+  {
+    "skills": ["compiling-lualatex-with-podman"],
+    "query": "I'm on Windows with Podman Desktop. Build the report in C:\\Users\\me\\report.",
+    "files": ["C:\\Users\\me\\report\\"],
+    "expected_behavior": [
+      "Uses scripts\\latex.ps1 (not latex.sh) with the same command names, for example `scripts\\latex.ps1 build C:\\Users\\me\\report`",
+      "Checks `podman info` first and suggests `podman machine start` if it cannot connect",
+      "If PowerShell blocks the script, suggests `powershell -ExecutionPolicy Bypass -File scripts\\latex.ps1 ...` rather than changing system policy",
+      "Runs no TeX, PDF, or text-processing tools on the host"
+    ]
+  }
+]

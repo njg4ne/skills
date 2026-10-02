@@ -1,0 +1,160 @@
+#!/bin/sh
+# latexctl: build and check a LuaLaTeX project. Runs INSIDE the project's build
+# container, with the project mounted at /work. The host launchers
+# (scripts/latex.sh, scripts/latex.ps1) start it; nothing here runs on the host.
+#
+# Usage: sh tools/latexctl COMMAND [OPTIONS]
+#   build [--clean]          check fonts, convert SVGs, run latexmk, then check-log
+#   check-log                summarize errors and warnings in the LaTeX log
+#   render [FIRST [LAST]] [--dpi N]   render pages to build/pages/page-N.png
+#   check-pdf                metadata, tagging, fonts, bookmarks, attachments
+#   verapdf-report           summarize build/verapdf.xml (written by the launcher)
+# Exit codes: 0 success (warnings may be printed), 1 errors, 2 usage.
+set -eu
+
+die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
+info() { printf '%s\n' "$*" >&2; }
+
+cd /work 2>/dev/null || die "project not mounted at /work"
+[ -f latex-build.env ] || die "latex-build.env missing; scaffold the project first"
+# shellcheck disable=SC1091
+. ./latex-build.env
+: "${MAIN_TEX:?MAIN_TEX unset in latex-build.env}"
+[ -f "src/$MAIN_TEX" ] || die "src/$MAIN_TEX not found"
+STEM=${MAIN_TEX%.tex}
+PDF="src/$STEM.pdf"
+LOG="src/$STEM.log"
+mkdir -p build
+
+check_fonts() {
+  # Fail early with a clear message instead of a cryptic fontspec error.
+  # luaotfload-tool exits 0 even on failure, so match its "found!" message.
+  missing=""
+  old_ifs=$IFS; IFS='|'
+  for f in ${REQUIRED_FONTS:-}; do
+    [ -n "$f" ] || continue
+    if ! fc-list : family | tr ',' '\n' | grep -Fxq "$f" &&
+       ! TERM=dumb luaotfload-tool --find="$f" 2>&1 | grep -q 'found!'; then
+      missing="${missing:+$missing, }$f"
+    fi
+  done
+  IFS=$old_ifs
+  if [ -n "$missing" ]; then
+    printf 'error: font(s) not found in image: %s\n' "$missing" >&2
+    info "fix: see references/fonts.md; add a Debian package to the apt line in the"
+    info "     project's Containerfile, or put font files in src/fonts/ and load them by file name"
+    exit 1
+  fi
+}
+
+cmd_build() {
+  clean=0
+  [ "${1:-}" = "--clean" ] && clean=1
+  check_fonts
+  cd src
+  [ "$clean" -eq 1 ] && { latexmk -C "$MAIN_TEX" >/dev/null 2>&1 || true; rm -f ./*-SAVE-ERROR; }
+  for f in figures/*.svg; do
+    [ -e "$f" ] || continue
+    out="${f%.svg}.pdf"
+    if [ ! -e "$out" ] || [ "$f" -nt "$out" ]; then
+      rsvg-convert -f pdf -o "$out" "$f" || die "SVG conversion failed: src/$f"
+    fi
+  done
+  info "compiling src/$MAIN_TEX"
+  set +e
+  latexmk "$MAIN_TEX" > latexmk.log 2>&1
+  rc=$?
+  set -e
+  cd /work
+  [ -f "$PDF" ] && cp "$PDF" build/output.pdf
+  cmd_check_log || rc=1
+  [ "$rc" -eq 0 ] || die "build failed; details in src/latexmk.log and $LOG"
+  info "ok: $PDF (copy at build/output.pdf)"
+}
+
+cmd_check_log() {
+  [ -f "$LOG" ] || die "no log at $LOG; LaTeX did not run (see src/latexmk.log)"
+  # Overfull boxes under 1pt are invisible in print; report only larger ones.
+  min_pt=1
+  errors=$(grep -nE '^!|^[^:]+:[0-9]+: |Emergency stop|Fatal error' "$LOG" | head -20 || true)
+  glyphs=$(grep -E 'Missing character' "$LOG" | sort | uniq -c | head -10 || true)
+  undef=$(grep -E "(Reference|Citation) .* undefined|There were undefined" "$LOG" | sort -u | head -10 || true)
+  overfull=$(grep -E 'Overfull \\hbox \(([0-9.]+)pt' "$LOG" |
+    awk -v min="$min_pt" '{ v=$3; gsub(/[()pt]/,"",v); if (v+0 >= min) print }' | head -15 || true)
+  tagwarn=$(grep -E 'tagpdf (Warning|Error)' "$LOG" | grep -v 'unicode-math' | sort | uniq -c | head -10 || true)
+  pages=$(grep -oE 'Output written on .* \(([0-9]+) pages?' "$LOG" | grep -oE '[0-9]+ pages?' || true)
+  status=0
+  [ -n "$errors" ] && { echo "ERRORS:"; echo "$errors"; status=1; }
+  [ -n "$glyphs" ] && { echo "MISSING GLYPHS (font lacks these characters):"; echo "$glyphs"; }
+  [ -n "$undef" ] && { echo "UNDEFINED REFERENCES/CITATIONS:"; echo "$undef"; }
+  [ -n "$overfull" ] && { echo "OVERFULL LINES (>= ${min_pt}pt):"; echo "$overfull"; }
+  [ -n "$tagwarn" ] && { echo "TAGGING WARNINGS:"; echo "$tagwarn"; }
+  [ -z "$pages" ] && { echo "NO PDF WRITTEN"; status=1; }
+  if [ "$status" -eq 0 ]; then
+    if [ -z "$glyphs$undef$overfull$tagwarn" ]; then echo "log check: $pages; clean"
+    else echo "log check: $pages; warnings above"; fi
+  fi
+  return $status
+}
+
+cmd_render() {
+  # 60 dpi keeps a US Letter page near 510x660 px: enough for layout review,
+  # small enough to view many pages cheaply. Use --dpi 150 for detail.
+  dpi=60 first=1 last=9999 n=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --dpi) dpi=$2; shift ;;
+      *) n=$((n + 1)); if [ $n -eq 1 ]; then first=$1; last=$1; else last=$1; fi ;;
+    esac
+    shift
+  done
+  [ -f "$PDF" ] || die "$PDF not found; run build first"
+  mkdir -p build/pages && rm -f build/pages/page-*.png
+  pdftoppm -r "$dpi" -png -f "$first" -l "$last" "$PDF" build/pages/page
+  ls build/pages/page-*.png
+}
+
+cmd_check_pdf() {
+  [ -f "$PDF" ] || die "$PDF not found; run build first"
+  status=0
+  echo "== metadata"; pdfinfo "$PDF" | grep -E '^(Title|Author|Tagged|PDF version|Pages):' || true
+  unembedded=$(pdffonts "$PDF" | awk 'NR>2 && $(NF-4)=="no"')
+  echo "== fonts not embedded"; [ -n "$unembedded" ] && echo "$unembedded"
+  # 40 lines show the top two outline levels of a typical report without flooding output.
+  echo "== bookmarks (first 40)"; mutool show "$PDF" outline 2>/dev/null | head -40 || true
+  echo "== attachments"; pdfdetach -list "$PDF"
+  title=$(pdfinfo "$PDF" | sed -n 's/^Title:[[:space:]]*//p')
+  [ -n "$title" ] || echo "WARNING: no PDF title; set pdftitle in \\hypersetup"
+  if [ "${TAGGED:-no}" = yes ] && ! pdfinfo "$PDF" | grep -q '^Tagged:[[:space:]]*yes'; then
+    echo "ERROR: TAGGED=yes but the PDF is not tagged; is \\DocumentMetadata the first line of src/$MAIN_TEX?"
+    status=1
+  fi
+  [ -n "$unembedded" ] && { echo "ERROR: some fonts are not embedded (listed above)"; status=1; }
+  return $status
+}
+
+cmd_verapdf_report() {
+  xml=build/verapdf.xml
+  [ -s "$xml" ] || die "no $xml; run the launcher's verapdf command"
+  grep -q '<details passedRules' "$xml" || die "veraPDF did not produce a report; see $xml"
+  grep -o '<details passedRules="[0-9]*" failedRules="[0-9]*" passedChecks="[0-9]*" failedChecks="[0-9]*"' "$xml" | sed 's/<details //'
+  # One line per failed rule: clause, number of failed checks, description.
+  awk '
+    /<rule / && /status="failed"/ { match($0, /clause="[^"]*"/); c=substr($0, RSTART+8, RLENGTH-9)
+                                    match($0, /failedChecks="[0-9]*"/); n=substr($0, RSTART+14, RLENGTH-15); want=1; next }
+    want && /<description>/ { sub(/.*<description>/, ""); sub(/<\/description>.*/, ""); print "  failed " c " (" n "x): " substr($0, 1, 140); want=0 }' "$xml"
+  if grep -q 'clause="8.4.5.3.2"[^>]*status="failed"' "$xml"; then
+    echo "Note: clause 8.4.5.3.2 comes from TrueType fonts under LuaTeX; OpenType fonts avoid it."
+  fi
+  grep -q 'failedRules="0"' "$xml"
+}
+
+cmd=${1:-}; [ $# -gt 0 ] && shift
+case "$cmd" in
+  build) cmd_build "$@" ;;
+  check-log) cmd_check_log ;;
+  render) cmd_render "$@" ;;
+  check-pdf) cmd_check_pdf ;;
+  verapdf-report) cmd_verapdf_report ;;
+  *) sed -n '6,13p' "$0" >&2; exit 2 ;;
+esac

@@ -1,0 +1,13 @@
+# LaTeX build artifacts (sources and the final PDF stay tracked)
+src/*.aux
+src/*.bbl
+src/*.bcf
+src/*.blg
+src/*.fdb_latexmk
+src/*.fls
+src/*.log
+src/*.out
+src/*.run.xml
+src/*.toc
+src/*.synctex.gz
+build/

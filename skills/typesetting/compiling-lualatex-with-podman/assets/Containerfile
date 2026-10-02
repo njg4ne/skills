@@ -1,0 +1,26 @@
+# LuaLaTeX build image for this project. Everything the build needs runs here;
+# the host only starts containers. Written by scaffold.sh; edit the two marked
+# lines on purpose, then rebuild (the launcher rebuilds on every run, cached).
+#
+# Base: official TeX Live (full scheme), pinned by digest for repeatable builds.
+# TeX Live 2026 provides \DocumentMetadata{tagging=on}, piton, embedfile, biber,
+# latexmk, and many OpenType fonts.
+FROM @@BASE_IMAGE@@
+
+# SVG->PDF (rsvg-convert), PDF inspection (poppler-utils, mupdf-tools), zip for
+# bundling attachments, plus any Debian font packages this project needs
+# (EXTRA FONT PACKAGES go at the end of the apt-get line).
+# TeX Live's OpenType fonts are linked into fontconfig so SVG figures can use them.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      librsvg2-bin poppler-utils mupdf-tools zip fontconfig @@FONT_PACKAGES@@ \
+ && rm -rf /var/lib/apt/lists/* \
+ && ln -s "$(kpsewhich -var-value TEXMFDIST)/fonts/opentype" /usr/local/share/fonts/texlive-opentype \
+ && fc-cache -f
+
+# Build the font caches once, world-writable, so any runtime UID compiles fast.
+ENV TEXMFVAR=/var/cache/texmf-var
+RUN mkdir -p "$TEXMFVAR" && luaotfload-tool --update && chmod -R a+rwX "$TEXMFVAR"
+
+ENV HOME=/tmp
+WORKDIR /work

@@ -1,0 +1,27 @@
+% Paste into the preamble of a tagged document (after biblatex, before hyperref).
+% Tested on TeX Live 2026 with \DocumentMetadata{..., tagging=on}: passes PDF/UA-2.
+\usepackage{piton}
+\usepackage{embedfile}
+\usepackage{needspace}
+\NewPitonLanguage{sh}{morekeywords={if,then,elif,else,fi,for,in,do,done,while,case,esac,set,exit,return,export,shift},
+  morecomment=[l]\#, morestring=[b]", morestring=[b]', sensitive=true}
+\NewPitonLanguage{unit}{morecomment=[l]\#, moredelim=[s][\color{blue!60!black}\bfseries]{[}{]}, sensitive=true}
+\SetPitonStyle{Comment = \color{gray!80!black}\itshape, Keyword = \color{blue!60!black}\bfseries,
+  String = \color{red!50!black}, Number = {}}
+\PitonOptions{break-lines, break-strings-anywhere, break-numbers-anywhere,
+  background-color=gray!7, splittable=4, line-numbers}
+% One listing = one tagged block (P containing Code), as the kernel tags verbatim.
+\NewDocumentCommand{\taggedcode}{m}{%
+  \par\begingroup
+  \tagpdfsetup{para/tagging=false}%
+  \tagstructbegin{tag=P}\tagstructbegin{tag=Code}\tagmcbegin{}%
+  \footnotesize #1%
+  \tagmcend\tagstructend\tagstructend
+  \endgroup\par}
+% \codefile{language}{path from src/}{saved name}{one-line description}
+% Prints a header, embeds the file as a PDF 2.0 associated file, and lists it.
+\NewDocumentCommand{\codefile}{mmmm}{%
+  \par\medskip\needspace{8\baselineskip}\noindent\textbf{\texttt{#3}}: #4\par
+  \embedfile[desc={#4}, mimetype=text/plain, afrelationship={/Supplement}, ucfilespec={#3}]{#2}%
+  \taggedcode{\PitonInputFile[language=#1]{#2}}}
+% Usage in the body:  \codefile{sh}{../config/deploy.sh}{deploy.sh}{Deployment script}

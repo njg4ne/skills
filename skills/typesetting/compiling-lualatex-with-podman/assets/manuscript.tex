@@ -1,0 +1,64 @@
+@@METADATA@@
+\documentclass[@@SIZE@@,@@PAPER@@]{@@CLASS@@}
+
+\usepackage[margin=@@MARGIN@@]{geometry}
+\usepackage{fontspec}
+\setmainfont{@@MAIN_FONT@@}
+\setsansfont{@@SANS_FONT@@}
+\setmonofont{@@MONO_FONT@@}[Scale=MatchLowercase]
+\usepackage{setspace}
+@@SPACING_CMD@@
+\usepackage[@@LANGUAGE@@]{babel}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{xcolor}
+@@BIBLATEX@@
+% Tagging-safe preamble: no titlesec, enumitem, or listings (see references/accessibility.md).
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=blue!50!black,
+  bookmarksnumbered=true,bookmarksdepth=2,bookmarksopen=true,pdfdisplaydoctitle=true]{hyperref}
+\setlength{\emergencystretch}{3em}
+
+% \autoref names; babel resets them, so set them inside the language's extras.
+\addto\extras@@LANGUAGE@@{%
+  \renewcommand{\sectionautorefname}{Section}%
+  \renewcommand{\subsectionautorefname}{Section}%
+  \renewcommand{\appendixautorefname}{Appendix}%
+  \renewcommand{\figureautorefname}{Figure}%
+  \renewcommand{\tableautorefname}{Table}}
+
+\makeatletter
+% Unnumbered section with a contents entry, a link anchor, and a name for \nameref.
+% Tagged PDFs give \section* its own anchor; untagged ones need \phantomsection.
+\newcommand{\unnumsec}[2]{\section*{#1}%
+  \IfDocumentMetadataTF{}{\phantomsection}%
+  \addcontentsline{toc}{section}{#1}\def\@currentlabelname{#1}\label{#2}}
+% Appendix heading reading "Appendix A: Title" in the heading, contents, and bookmarks,
+% with \autoref, \ref, and \nameref still working. Use after \appendix.
+\newcommand{\appsection}[2]{%
+  \stepcounter{section}%
+  \section*{\appendixname~\thesection: #1}%
+  \addtocounter{section}{-1}\refstepcounter{section}%
+  \def\@currentlabelname{#1}%
+  \addcontentsline{toc}{section}{\appendixname~\thesection: #1}%
+  \label{#2}}
+\makeatother
+
+\title{@@TITLE@@}
+\author{@@AUTHOR@@}
+\date{\today}
+\hypersetup{pdftitle={@@TITLE@@},pdfauthor={@@AUTHOR@@}}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+Replace this text. Put SVG figures in \texttt{figures/}, include them by base
+name, and give each one alternative text with the \texttt{alt} key of
+\texttt{\textbackslash includegraphics}. Refer to sections with
+\texttt{\textbackslash autoref}.
+
+@@PRINTBIB@@
+\end{document}
