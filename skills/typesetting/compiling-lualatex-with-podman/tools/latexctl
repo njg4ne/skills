@@ -2,6 +2,8 @@
 # latexctl: build and check a LuaLaTeX project. Runs INSIDE the project's build
 # container, with the project mounted at /work. The host launchers
 # (scripts/latex.sh, scripts/latex.ps1) start it; nothing here runs on the host.
+# From the compiling-lualatex-with-podman skill, github.com/njg4ne/skills.
+# Copyright (C) 2026 Nicholas Gardella. In a project it scaffolded: MIT License.
 #
 # Usage: sh tools/latexctl COMMAND [OPTIONS]
 #   build [--clean]          check fonts, convert SVGs, run latexmk, then check-log;
@@ -69,6 +71,7 @@ cmd_build() {
   for f in figures/*.svg; do
     [ -e "$f" ] || continue
     out="${f%.svg}.pdf"
+    # shellcheck disable=SC3013 # -nt works in dash, the sh of the TeX Live image
     if [ ! -e "$out" ] || [ "$f" -nt "$out" ]; then
       rsvg-convert -f pdf -o "$out" "$f" || die "SVG conversion failed: src/$f"
     fi
@@ -173,5 +176,5 @@ case "$cmd" in
   render) cmd_render "$@" ;;
   check-pdf) cmd_check_pdf ;;
   verapdf-report) cmd_verapdf_report ;;
-  *) sed -n '6,13p' "$0" >&2; exit 2 ;;
+  *) sed -n '8,15p' "$0" >&2; exit 2 ;;
 esac

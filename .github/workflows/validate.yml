@@ -1,0 +1,19 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The same two commands as a local run; Ubuntu runners include Podman.
+      - name: Build the validation image
+        run: podman build -t skill-tools -f ci/Containerfile ci
+      - name: Validate skills and lint shell scripts
+        run: podman run --rm -v "$PWD:/work:Z" -w /work skill-tools sh ci/check.sh

@@ -1,7 +1,7 @@
 ---
 name: compiling-lualatex-with-podman
 description: Scaffolds, builds, and checks LuaLaTeX documents to PDF inside Podman (or Docker) containers, with the user's chosen fonts, size, line spacing, paper, margins, bibliography style, SVG figures, tagged accessible PDF output, highlighted code listings, and embedded file attachments. Works on macOS, Linux, and Windows because every tool runs in a container. Use when the user wants a PDF typeset with LaTeX/LuaLaTeX, a reproducible containerized TeX setup, custom fonts via fontspec, an accessible or tagged PDF, code or attachments in a PDF, or mentions latexmk, biber, or compiling a .tex file without installing TeX locally.
-license: MIT
+license: AGPL-3.0-or-later; files it places in your project are MIT. See NOTICE.md and LICENSE.txt.
 compatibility: Requires Podman (preferred) or Docker, plus a POSIX shell (scripts/latex.sh) or PowerShell 5.1+ (scripts/latex.ps1). All TeX, PDF, and validation tools run in containers. The first build pulls the full TeX Live image (several GB); veraPDF validation pulls its own image.
 metadata:
   author: Nicholas Gardella
