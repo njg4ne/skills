@@ -9,6 +9,10 @@ agent-neutral: no files, fields, or instructions that only one agent understands
 - **Self-contained.** A skill must work when copied alone. It refers only to files inside
   its own folder, and it carries `LICENSE.txt` (identical to the root `LICENSE`) and a
   `NOTICE.md` that lists its project files (files it copies into a user's project).
+- **README for people.** Each skill has a short `README.md`: what it does, requirements,
+  install with `npx skills@latest add njg4ne/skills --skill <name> --agent universal`
+  or by hand, update and remove, and a usage example. `SKILL.md` never links to it, so
+  agents do not load it.
 - **Versions.** Bump `metadata.version` in `SKILL.md` for every user-visible change.
   Release with `dev/release.sh`, which tags `<skill-name>/v<version>`. Update the table
   in `README.md` when you add a skill.

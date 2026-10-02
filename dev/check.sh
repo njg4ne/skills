@@ -1,8 +1,8 @@
 #!/bin/sh
 # Validate every skill in this repository. Runs INSIDE the dev/Containerfile
 # image, with the repository mounted at /work; dev/validate.sh starts it.
-# Checks: the Agent Skills spec (skills-ref), unique skill names, a license and
-# notice in each skill, valid eval JSON, and shellcheck on every shell script.
+# Checks: the Agent Skills spec (skills-ref), unique skill names, a license,
+# notice, and README in each skill, valid eval JSON, and shellcheck on every shell script.
 set -eu
 
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -23,7 +23,9 @@ for md in skills/*/*/SKILL.md; do
   case "$names" in *" $name "*) echo "duplicate skill name: $name"; status=1 ;; esac
   names="$names$name "
   cmp -s LICENSE "$dir/LICENSE.txt" || { echo "$dir/LICENSE.txt is missing or differs from LICENSE"; status=1; }
-  [ -f "$dir/NOTICE.md" ] || { echo "$dir/NOTICE.md is missing"; status=1; }
+  for f in NOTICE.md README.md; do
+    [ -f "$dir/$f" ] || { echo "$dir/$f is missing"; status=1; }
+  done
   for j in "$dir"/evals/*.json; do
     [ -e "$j" ] || continue
     python3 -m json.tool "$j" > /dev/null || { echo "invalid JSON: $j"; status=1; }

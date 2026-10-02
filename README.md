@@ -13,7 +13,7 @@ rest.
 
 | Area | Skill | What it does |
 |---|---|---|
-| typesetting | [compiling-lualatex-with-podman](skills/typesetting/compiling-lualatex-with-podman/SKILL.md) | Scaffolds, builds, and checks LuaLaTeX documents in Podman or Docker containers: chosen fonts and layout, SVG figures, tagged accessible PDF (PDF/UA-2), code listings, and file attachments. Nothing runs on the host. |
+| typesetting | [compiling-lualatex-with-podman](skills/typesetting/compiling-lualatex-with-podman/) | Scaffolds, builds, and checks LuaLaTeX documents in Podman or Docker containers: chosen fonts and layout, SVG figures, tagged accessible PDF (PDF/UA-2), code listings, and file attachments. Nothing runs on the host. |
 
 ## Install
 
@@ -45,6 +45,7 @@ skills/<area>/<skill-name>/
 ├── SKILL.md        instructions and frontmatter (name, description, license, metadata.version)
 ├── LICENSE.txt     copy of the AGPL, so the skill stays licensed when copied alone
 ├── NOTICE.md       copyright, and which files are MIT once placed in your project
+├── README.md       for people: install, update, remove, and a usage example
 ├── scripts/  tools/  assets/  references/  evals/    as the skill needs
 ```
 
