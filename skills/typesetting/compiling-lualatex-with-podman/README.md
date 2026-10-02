@@ -21,9 +21,10 @@ With the [skills](https://skills.sh) CLI (needs Node.js), from your project's ro
 npx skills@latest add njg4ne/skills --skill compiling-lualatex-with-podman --agent universal
 ```
 
-This copies the skill to `.agents/skills/compiling-lualatex-with-podman/`. Add `-g` to
-install it for your user instead of one project. Leave out `--agent universal` to pick
-specific agents from a list.
+This copies the skill to `.agents/skills/compiling-lualatex-with-podman/`, the
+project path that many agents read. Add `-g` to install it for your user instead, in
+`~/.config/agents/skills/`. Leave out `--agent universal` to pick specific agents from a
+list.
 
 Update or remove it later:
 

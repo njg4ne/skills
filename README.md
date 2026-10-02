@@ -25,9 +25,10 @@ Install one skill at a time. Pick one of these routes.
 npx skills@latest add njg4ne/skills --skill compiling-lualatex-with-podman --agent universal
 ```
 
-**By hand:** copy the skill's folder into `.agents/skills/` in your project (or
-`~/.agents/skills/` for all your projects). Keep the folder name, because it must
-match the skill's `name`.
+Add `-g` to install for your user, in `~/.config/agents/skills/`, instead of one project.
+
+**By hand:** copy the skill's folder into `.agents/skills/` in your project. Keep the
+folder name, because it must match the skill's `name`.
 
 ```sh
 git clone --depth 1 https://github.com/njg4ne/skills.git /tmp/njg4ne-skills
