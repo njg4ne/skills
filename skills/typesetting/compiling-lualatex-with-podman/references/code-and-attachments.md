@@ -91,7 +91,8 @@ Use document-level embedded files declared as PDF 2.0 associated files:
   PDF/UA 8.9.2.4.10; use them only when no conformance claim is needed, and load
   attachfile2 after hyperref (it loads hyperref itself, so "Option clash" otherwise).
 - Use `mimetype=application/zip` for archives. Build the zip inside the container
-  (`zip -qrX`, excluding `.DS_Store`) before LaTeX runs, so the PDF and zip match.
+  (`zip -qrX`, excluding `.DS_Store`) before LaTeX runs, so the PDF and zip match:
+  put the `zip` command in a script and name it as `PRE_BUILD` in `latex-build.env`.
 - Do not attach the same file with both `\embedfile` and `\textattachfile`; it is
   stored twice.
 - Verify with `latex.sh check-pdf` (lists attachments), or extract and compare inside

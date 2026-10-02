@@ -171,6 +171,11 @@ MAIN_TEX='$MAIN_TEX'
 REQUIRED_FONTS='$MAIN_FONT|$SANS_FONT|$MONO_FONT'
 # Whether the PDF should be tagged (checked by check-pdf).
 TAGGED='$TAGGED'
+# Optional hooks: project-relative scripts that build runs with sh in the container.
+# PRE_BUILD runs before the font check, for example to zip files the PDF attaches.
+# PRE_BUILD=''
+# POST_BUILD runs after a clean build and gets the PDF path as \$1, for example to copy it.
+# POST_BUILD=''
 ENV
   info "wrote $PROJECT/latex-build.env"
 else

@@ -4,7 +4,8 @@
 # (scripts/latex.sh, scripts/latex.ps1) start it; nothing here runs on the host.
 #
 # Usage: sh tools/latexctl COMMAND [OPTIONS]
-#   build [--clean]          check fonts, convert SVGs, run latexmk, then check-log
+#   build [--clean]          check fonts, convert SVGs, run latexmk, then check-log;
+#                            runs the PRE_BUILD and POST_BUILD hooks if latex-build.env sets them
 #   check-log                summarize errors and warnings in the LaTeX log
 #   render [FIRST [LAST]] [--dpi N]   render pages to build/pages/page-N.png
 #   check-pdf                metadata, tagging, fonts, bookmarks, attachments
@@ -47,9 +48,21 @@ check_fonts() {
   fi
 }
 
+run_hook() { # run_hook NAME SCRIPT [ARGS]: run a project script with sh from /work
+  case "$2" in /*|*..*) die "$1 must be a path inside the project: $2" ;; esac
+  [ -f "$2" ] || die "$1 script not found: $2"
+  info "$1: sh $2"
+  hook=$2; shift 2
+  (cd /work && sh "$hook" "$@")
+}
+
 cmd_build() {
   clean=0
   [ "${1:-}" = "--clean" ] && clean=1
+  # PRE_BUILD prepares inputs, for example a zip that the document attaches.
+  if [ -n "${PRE_BUILD:-}" ]; then
+    run_hook PRE_BUILD "$PRE_BUILD" || die "pre-build failed: $PRE_BUILD"
+  fi
   check_fonts
   cd src
   [ "$clean" -eq 1 ] && { latexmk -C "$MAIN_TEX" >/dev/null 2>&1 || true; rm -f ./*-SAVE-ERROR; }
@@ -70,6 +83,10 @@ cmd_build() {
   cmd_check_log || rc=1
   [ "$rc" -eq 0 ] || die "build failed; details in src/latexmk.log and $LOG"
   info "ok: $PDF (copy at build/output.pdf)"
+  # POST_BUILD gets the PDF path, for example to copy it to a release name.
+  if [ -n "${POST_BUILD:-}" ]; then
+    run_hook POST_BUILD "$POST_BUILD" "$PDF" || die "post-build failed: $POST_BUILD"
+  fi
 }
 
 cmd_check_log() {

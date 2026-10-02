@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Podman (preferred) or Docker, plus a POSIX shell (scripts/latex.sh) or PowerShell 5.1+ (scripts/latex.ps1). All TeX, PDF, and validation tools run in containers. The first build pulls the full TeX Live image (several GB); veraPDF validation pulls its own image.
 metadata:
   author: Nicholas Gardella
-  version: "2.0"
+  version: "2.1"
 ---
 
 # Compiling LuaLaTeX with Podman
@@ -100,7 +100,7 @@ existing files (add `--force` to replace):
 report/
 ├── Containerfile        build image: pinned TeX Live base, extra font packages
 ├── .containerignore     empty build context, so rebuilds stay fast
-├── latex-build.env      MAIN_TEX, REQUIRED_FONTS, TAGGED
+├── latex-build.env      MAIN_TEX, REQUIRED_FONTS, TAGGED, optional hooks
 ├── tools/latexctl       build tool; runs inside the image
 ├── .gitignore
 └── src/
@@ -149,6 +149,14 @@ Rebuilds the image (cached after the first run, which pulls TeX Live and takes a
 while; log in `build/image-build.log`), verifies that every requested font exists,
 converts SVGs, runs latexmk, then checks the log. Output: `report/src/manuscript.pdf`,
 copied to `report/build/output.pdf`.
+
+When the document needs a step before or after the build, set a hook in
+`latex-build.env` instead of writing a separate build script. `PRE_BUILD` names a
+project-relative script that runs before the font check, for example to zip a folder
+that the PDF attaches. `POST_BUILD` runs after a clean build and log check, and gets the
+PDF path as `$1`, for example to copy the PDF to a release file name. Both run with `sh`
+from the project root inside the container, so they may use any tool in the image. If a
+hook fails, the build fails.
 
 ### 6. Fix and rebuild
 

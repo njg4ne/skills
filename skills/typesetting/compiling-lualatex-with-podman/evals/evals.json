@@ -52,5 +52,15 @@
       "If PowerShell blocks the script, suggests `powershell -ExecutionPolicy Bypass -File scripts\\latex.ps1 ...` rather than changing system policy",
       "Runs no TeX, PDF, or text-processing tools on the host"
     ]
+  },
+  {
+    "skills": ["compiling-lualatex-with-podman"],
+    "query": "Attach a zip of ./config to the PDF, built fresh each time.",
+    "files": ["latex-build.env", "src/manuscript.tex", "config/"],
+    "expected_behavior": [
+      "Writes a small script (for example tools/pack-config.sh) that zips config/ into src/build/, and sets PRE_BUILD to it in latex-build.env, rather than hand-writing a separate build script or zipping on the host",
+      "Attaches the zip with \\embedfile (mimetype=application/zip, afrelationship, ucfilespec), using a path relative to src/",
+      "Builds with `latex.sh build` and confirms with `latex.sh check-pdf` that the zip is listed under attachments"
+    ]
   }
 ]
